@@ -25,7 +25,7 @@ fuego.run(
 
     # Provider Specific Args (AzureML in this case)
     # hopefully we minimize these so exp is same across providers.
-		# Probably possible to get more opinionated about how we handle this.
+	# Probably possible to get more opinionated about how we handle this.
     environment_name='AzureML-sklearn-0.24-ubuntu18.04-py37-cpu:47',
 
     # Script kwargs - these are passed to the script
