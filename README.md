@@ -6,6 +6,16 @@ A 🔥 tool for running code in the cloud
 
 A unified interface to view/manage runs, compute instances, data, etc. across your authenticated cloud providers.
 
+## Installation
+
+For now, you can install from source:
+
+```bash
+git clone https://github.com/huggingface/fuego.git
+cd fuego
+pip install -e ".[azureml]"
+```
+
 ## WIP API
 
 The Python API and CLI should have very similar experiences so folks can use whichever they prefer.
