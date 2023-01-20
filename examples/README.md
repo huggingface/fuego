@@ -9,7 +9,7 @@ From this `./examples` directory in a local clone, you can try this example out 
 #### Run from Python
 
 ```python
-from fuego import run
+import fuego
 
 fuego.run(
     script='./simple_example_with_requirements/run.py',
