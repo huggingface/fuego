@@ -1,5 +1,6 @@
 """Check presence of installed packages at runtime."""
 import sys
+
 import packaging.version
 
 _PY_VERSION: str = sys.version.split()[0].rstrip("+")

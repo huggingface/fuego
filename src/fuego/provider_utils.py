@@ -1,18 +1,15 @@
 from typing import List, Optional
 
+
 class Provider:
     """Unified interface for all cloud providers."""
+
     def __init__(self, **kwargs):
         """Authentication happens here. Internal obj saved as attribute, then used in other methods"""
         raise NotImplementedError
 
     def create_run(
-        self,
-        script: str,
-        instance_name: str,
-        instance_type: str,
-        requirements_file: Optional[str] = None,
-        **kwargs
+        self, script: str, instance_name: str, instance_type: str, requirements_file: Optional[str] = None, **kwargs
     ):
         """Submits a run on a compute target. Returns run info"""
         raise NotImplementedError

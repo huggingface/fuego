@@ -14,7 +14,7 @@ requirements = [
     'fire',
 ]
 extras = {}
-extras['azureml'] = ['azure-ai-ml']
+extras['azureml'] = ['azureml-core']
 
 setup(
     name="fuego",
