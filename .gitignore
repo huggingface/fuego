@@ -131,3 +131,5 @@ dmypy.json
 .DS_Store
 
 config.json
+
+run.py
