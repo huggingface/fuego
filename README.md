@@ -2,13 +2,13 @@
 
 A 🔥 tool for running code in the cloud
 
+### Note
+
+❗ **This project is just an _idea_ right now and is being actively developed** ❗
+
 ## The idea
 
 A unified interface to view/manage runs, compute instances, data, etc. across your authenticated cloud providers.
-
-### Note
-
-❗ **This project is a WIP and being actively developed** ❗
 
 Currently, this project only works for AzureML training runs. The idea is to support other cloud providers (AWS, GCP, etc.) and other run types (inference, data preparation, etc.) in the future.
 
