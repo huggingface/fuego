@@ -15,7 +15,7 @@ else:
 _package_versions = {}
 
 _CANDIDATES = {
-    "azure.ai.ml": {"azure-ai-ml"},
+    "azureml-core": {"azureml-core"},
 }
 
 # Check once at runtime
@@ -42,10 +42,10 @@ def get_python_version() -> str:
     return _PY_VERSION
 
 
-# AzureML SDKv2 (azure.ai.ml)
+# AzureML SDKv1 (azureml-core)
 def is_azureml_available() -> bool:
-    return _is_available("azure.ai.ml")
+    return _is_available("azureml-core")
 
 
 def get_azureml_version() -> str:
-    return _get_version("azure.ai.ml")
+    return _get_version("azureml-core")
