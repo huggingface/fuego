@@ -6,6 +6,7 @@ import fire
 
 from .provider_azml import AzureMLProvider
 
+
 # TODO - something like a registry w/ all available providers
 providers = {
     "azureml": AzureMLProvider,

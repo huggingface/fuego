@@ -1,4 +1,5 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
+
 
 def get_version() -> str:
     rel_path = "src/fuego/__init__.py"
@@ -11,10 +12,10 @@ def get_version() -> str:
 
 
 requirements = [
-    'fire',
+    "fire",
 ]
 extras = {}
-extras['azureml'] = ['azureml-core']
+extras["azureml"] = ["azureml-core"]
 
 setup(
     name="fuego",

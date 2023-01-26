@@ -8,6 +8,7 @@ from tabulate import tabulate
 from .provider_utils import Provider
 from .runtime import is_azureml_available
 
+
 if is_azureml_available():
     from azureml.core import Environment, Experiment, ScriptRunConfig, Workspace
     from azureml.core.authentication import ServicePrincipalAuthentication
@@ -177,7 +178,9 @@ class AzureMLProvider(Provider):
         if requirements_file:
             requirements_file = Path(requirements_file)
             if not requirements_file.exists():
-                raise RuntimeError(f"Given requirements file '{requirements_file}' does not exist at the provided path")
+                raise RuntimeError(
+                    f"Given requirements file '{requirements_file}' does not exist at the provided path"
+                )
             elif requirements_file.suffix == ".txt":
                 env = Environment.from_pip_requirements(name, requirements_file)
             elif requirements_file.suffix in [".yml", ".yaml"]:

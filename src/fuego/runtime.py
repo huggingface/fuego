@@ -3,6 +3,7 @@ import sys
 
 import packaging.version
 
+
 _PY_VERSION: str = sys.version.split()[0].rstrip("+")
 
 if packaging.version.Version(_PY_VERSION) < packaging.version.Version("3.8.0"):

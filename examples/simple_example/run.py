@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
+
 def main(message: str = "Hello, world!"):
     logdir = Path("./logs")
     logdir.mkdir(exist_ok=True, parents=True)
