@@ -33,3 +33,36 @@ fuego run \
     ./simple_example_with_requirements/run.py \
     --message "'Howdy, world!'"
 ```
+
+## Transformers Text Classification
+
+This example is a copy of the `run_glue.py` script from the `transformers` library that we can use to check GPU-based cloud runs.
+
+Here, we'll run on a K80 instance on AzureML.
+
+#### Run from Python
+
+```python
+import fuego
+
+fuego.run(
+    script='./transformers_text_classification/run_glue.py',
+    provider='azureml',
+    instance_type='K80',
+    instance_count=1,
+    instance_name='fuego-gpu-compute',
+    environment_name='transformers-text-classification-env',
+    requirements_file='./transformers_text_classification/requirements.txt',
+    # Script kwargs - these are passed to the script as argparse args
+    model_name_or_path='bert-base-cased',
+    task_name='mrpc',
+    do_train=True,
+    do_eval=True,
+    max_seq_length=128,
+    per_device_train_batch_size=32,
+    learning_rate=2e-5,
+    num_train_epochs=3,
+    output_dir='./outputs',
+    logging_dir='./logs',
+)
+```
