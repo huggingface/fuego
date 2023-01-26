@@ -6,7 +6,7 @@ A 🔥 tool for running code in the cloud
 
 ❗ **This project is a WIP and just an _idea_ right now. Under active development.** ❗
 
-🤗 Suggestions/ideas/feedback from community are welcome!
+🤗 Suggestions/ideas/feedback from community are welcome! Please feel free to submit a [new idea](https://github.com/huggingface/fuego/discussions/new?category=ideas) in the discussions tab.
 
 ## The idea
 
