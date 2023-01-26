@@ -80,7 +80,7 @@ class AzureMLProvider(Provider):
         idle_time_before_scale_down: int = 120,
         vm_priority: str = "lowpriority",
         experiment_name: str = "fuego-experiment",
-        docker_image=None,
+        docker_image="mcr.microsoft.com/azureml/openmpi3.1.2-ubuntu18.04",
         environment_name: str = "fuego-env",
         display_name: str = "fuego-run",
         # Script Args
@@ -100,9 +100,6 @@ class AzureMLProvider(Provider):
         )
         exp = Experiment(self.ws, experiment_name)
 
-        # These two lines both quote the str values in kwargs, then flatten the dict into a list of str args.
-        # {'--arg1': 123, '--arg2': 'val2'} -> ['--arg1', '123', '--arg2', '"val2"']
-        kwargs = {k: v if not isinstance(v, str) else f'"{v}"' for k, v in kwargs.items()}
         args = list(itertools.chain(*((f"--{n}", f"{v}") for n, v in kwargs.items())))
 
         script_run_config = ScriptRunConfig(
@@ -174,15 +171,21 @@ class AzureMLProvider(Provider):
         if env:
             return env
 
-        requirements_file = Path(requirements_file)
-        if not requirements_file.exists():
-            raise RuntimeError(f"Given requirements file '{requirements_file}' does not exist at the provided path")
-        elif requirements_file.suffix == ".txt":
-            env = Environment.from_pip_requirements(name, requirements_file)
-        elif requirements_file.suffix in [".yml", ".yaml"]:
-            env = Environment.from_conda_specification(name, requirements_file)
+        if docker_image is None and requirements_file is None:
+            raise ValueError("Must provide either docker_image or requirements_file when creating env")
+
+        if requirements_file:
+            requirements_file = Path(requirements_file)
+            if not requirements_file.exists():
+                raise RuntimeError(f"Given requirements file '{requirements_file}' does not exist at the provided path")
+            elif requirements_file.suffix == ".txt":
+                env = Environment.from_pip_requirements(name, requirements_file)
+            elif requirements_file.suffix in [".yml", ".yaml"]:
+                env = Environment.from_conda_specification(name, requirements_file)
+            else:
+                print("Couldn't resolve env from requirements file")
         else:
-            print("Couldn't resolve env from requirements file")
+            env = Environment(name)
 
         if docker_image:
             env.docker.base_image = docker_image
