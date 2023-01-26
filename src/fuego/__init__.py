@@ -4,4 +4,4 @@ from .interface import run
 from .provider_azml import AzureMLProvider
 
 
-__version__ = "0.0.6"
+__version__ = "0.0.7.dev0"
