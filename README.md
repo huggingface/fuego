@@ -4,13 +4,26 @@ A 🔥 tool for running code in the cloud
 
 ### Note
 
-❗ **This project is just an _idea_ right now and is being actively developed** ❗
+❗ **This project is a WIP and just an _idea_ right now. Under active development.** ❗
+
+🤗 Suggestions/ideas/feedback from community are welcome!
 
 ## The idea
 
 A unified interface to view/manage runs, compute instances, data, etc. across your authenticated cloud providers.
 
+## Roadmap
+
 Currently, this project only works for AzureML training runs. The idea is to support other cloud providers (AWS, GCP, etc.) and other run types (inference, data preparation, etc.) in the future.
+
+- [x] Add AzureML Provider + ability to do basic training runs
+- [ ] Dataset upload
+- [ ] Ability to attach datasets to runs
+- [ ] Add Sagemaker Provider
+- [ ] Run from GitHub repos instead of local files?
+- [ ] Multi-GPU examples
+- [ ] Multi-Node examples
+
 
 ## Installation
 
