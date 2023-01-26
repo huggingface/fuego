@@ -36,6 +36,12 @@ fuego run \
 
 ## Transformers Text Classification
 
+This example is a copy of the `run_glue.py` script from the `transformers` library that we can use to check GPU-based cloud runs.
+
+Here, we'll run on a K80 instance on AzureML.
+
+#### Run from Python
+
 ```python
 import fuego
 
