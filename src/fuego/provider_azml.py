@@ -157,7 +157,7 @@ class AzureMLProvider(Provider):
                 idle_seconds_before_scaledown=idle_time_before_scale_down,
             )
             target = ComputeTarget.create(self.ws, name, config)
-            # target.wait_for_completion(show_output=True)
+            target.wait_for_completion(show_output=True)
         return target
 
     def list_compute_targets(self, **kwargs):
