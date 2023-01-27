@@ -5,11 +5,12 @@ from typing import Optional
 import fire
 
 from .provider_azml import AzureMLProvider
-
+from .provider_sagemaker import SagemakerProvider
 
 # TODO - something like a registry w/ all available providers
 providers = {
     "azureml": AzureMLProvider,
+    "sagemaker": SagemakerProvider,
 }
 
 

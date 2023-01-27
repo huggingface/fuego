@@ -16,6 +16,7 @@ requirements = [
 ]
 extras = {}
 extras["azureml"] = ["azureml-core"]
+extras["sagemaker"] = ["sagemaker"]
 
 setup(
     name="fuego",

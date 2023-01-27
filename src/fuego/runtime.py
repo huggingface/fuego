@@ -16,6 +16,7 @@ _package_versions = {}
 
 _CANDIDATES = {
     "azureml-core": {"azureml-core"},
+    "sagemaker": {"sagemaker"},
 }
 
 # Check once at runtime
@@ -49,3 +50,9 @@ def is_azureml_available() -> bool:
 
 def get_azureml_version() -> str:
     return _get_version("azureml-core")
+
+def is_sagemaker_available() -> bool:
+    return _is_available("sagemaker")
+
+def get_sagemaker_version() -> str:
+    return _get_version("sagemaker")
