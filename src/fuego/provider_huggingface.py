@@ -242,23 +242,5 @@ class HuggingFaceProvider(Provider):
         )
         return space_repo_url, dataset_repo_url
 
-    def list_runs(self, experiment_name=None, **kwargs):  # TODO- proper args
-        pass
-
-    def create_compute_target(
-        self,
-        name,
-        instance_type,
-        # AzureML Specific
-        min_nodes=0,
-        max_nodes=1,
-        idle_time_before_scale_down=120,
-        vm_priority="lowpriority",
-    ):
-        pass
-
-    def list_compute_targets(self, **kwargs):
-        raise NotImplementedError
-
-    def delete_compute_target(self, name, **kwargs):
+    def list_runs(self, **kwargs):
         raise NotImplementedError
