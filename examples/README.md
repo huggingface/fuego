@@ -22,6 +22,27 @@ fuego.run(
 )
 ```
 
+Run it on Hugging Face
+
+```python
+import fuego
+
+
+fuego.run(
+    provider='huggingface',
+    script='./simple_example_with_requirements/run.py',
+    instance_name=None,
+    instance_type='cpu',
+    instance_count=1,
+    requirements_file='./simple_example_with_requirements/requirements.txt',
+    # HF Specific
+    unpack_script_args_to_main=True,
+    space_save_dir="logs",
+    # Script kwargs - these are passed to the script as argparse args
+    message='Howdy, world!',
+)
+```
+
 #### Run from CLI
 
 ```
