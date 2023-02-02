@@ -13,9 +13,9 @@ def get_version() -> str:
 
 requirements = [
     "fire",
+    "huggingface_hub>=0.12.0",
+    "GitPython",
 ]
-extras = {}
-extras["azureml"] = ["azureml-core"]
 
 setup(
     name="fuego",
@@ -28,8 +28,7 @@ setup(
     author_email="nate@huggingface.com",
     license="Apache",
     install_requires=requirements,
-    extras_require=extras,
     package_dir={"": "src"},
     packages=find_packages("src"),
-    entry_points={"console_scripts": ["fuego=fuego.interface:main"]},
+    entry_points={"console_scripts": ["fuego=fuego.run_on_spaces:cli_run"]},
 )
