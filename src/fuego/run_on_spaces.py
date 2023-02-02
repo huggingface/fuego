@@ -7,7 +7,7 @@ from typing import List, Optional, Union
 
 import fire
 import git
-from huggingface_hub import HfFolder, add_space_secret, create_repo, upload_file, upload_folder
+from huggingface_hub import HfFolder, SpaceHardware, add_space_secret, create_repo, upload_file, upload_folder
 from huggingface_hub.repocard import RepoCard
 from huggingface_hub.utils import logging
 
@@ -15,15 +15,7 @@ from huggingface_hub.utils import logging
 logger = logging.get_logger(__name__)
 
 
-HUGGINGFACE_COMPUTE_TARGETS_MAP = {
-    "cpu": "cpu-basic",
-    "cpu-upgrade": "cpu-upgrade",
-    "t4-small": "t4-small",
-    "t4-medium": "t4-medium",
-    "a10g-small": "a10g-small",
-    "a10g-large": "a10g-large",
-    "a100-large": "a100-large",
-}
+SPACES_HARDWARE_TYPES = [x.value for x in SpaceHardware]
 
 _task_run_script_template = """import os
 from pathlib import Path
@@ -154,11 +146,8 @@ def run(
     Returns:
         Tuple[str, str]: Tuple of the Hugging Face Space URL and Hugging Face Dataset Repo URL.
     """
-    space_hardware = HUGGINGFACE_COMPUTE_TARGETS_MAP[space_hardware]
-    if space_hardware is None:
-        raise ValueError(
-            f"Invalid instance type: {space_hardware}. Should be one of {list(HUGGINGFACE_COMPUTE_TARGETS_MAP.keys())}"
-        )
+    if space_hardware not in SPACES_HARDWARE_TYPES:
+        raise ValueError(f"Invalid instance type: {space_hardware}. Should be one of {SPACES_HARDWARE_TYPES}")
 
     script_args = kwargs or {}
     script_args_lst = list(chain(*((f"--{n}", f"{v}") for n, v in script_args.items())))
