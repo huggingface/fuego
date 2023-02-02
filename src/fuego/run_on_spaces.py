@@ -316,7 +316,7 @@ def github_run(
             raise ValueError(f"Could not find script {script} in repo {repo_url}")
         script = str(script_path)
 
-        if requirements_path is not None:
+        if requirements_file is not None:
             requirements_path = tempdir / requirements_file
             if not requirements_path.exists():
                 raise ValueError(f"Could not find requirements file {requirements_file} in repo {repo_url}")
@@ -341,8 +341,8 @@ def github_run(
                 github_repo_branch=github_repo_branch,
                 github_repo_sha=repo.head.object.hexsha,
                 **extra_run_metadata or {},
-            )
-            ** kwargs,
+            ),
+            **kwargs,
         )
 
 
