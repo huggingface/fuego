@@ -15,7 +15,7 @@ else:
 _package_versions = {}
 
 _CANDIDATES = {
-    "azureml-core": {"azureml-core"},
+    "huggingface_hub": {"huggingface_hub"},
 }
 
 # Check once at runtime
@@ -43,9 +43,9 @@ def get_python_version() -> str:
 
 
 # AzureML SDKv1 (azureml-core)
-def is_azureml_available() -> bool:
-    return _is_available("azureml-core")
+def is_huggingface_hub_available() -> bool:
+    return _is_available("huggingface_hub")
 
 
-def get_azureml_version() -> str:
-    return _get_version("azureml-core")
+def get_huggingface_hub_version() -> str:
+    return _get_version("huggingface_hub")
