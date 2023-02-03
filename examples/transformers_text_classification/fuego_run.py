@@ -18,4 +18,6 @@ space_url, dataset_url = fuego.run(
     num_train_epochs=3,
     output_dir="./outputs",
     logging_dir="./logs",
+    logging_steps=20,
+    report_to="tensorboard"
 )
