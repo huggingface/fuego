@@ -7,87 +7,255 @@ from typing import List, Optional, Union
 
 import fire
 import git
-from huggingface_hub import HfFolder, add_space_secret, create_repo, upload_file, upload_folder
-from huggingface_hub.repocard import RepoCard
+from huggingface_hub import HfFolder, SpaceHardware, add_space_secret, create_repo, upload_file, upload_folder
 from huggingface_hub.utils import logging
 
 
 logger = logging.get_logger(__name__)
 
 
-HUGGINGFACE_COMPUTE_TARGETS_MAP = {
-    "cpu": "cpu-basic",
-    "cpu-upgrade": "cpu-upgrade",
-    "t4-small": "t4-small",
-    "t4-medium": "t4-medium",
-    "a10g-small": "a10g-small",
-    "a10g-large": "a10g-large",
-    "a100-large": "a100-large",
-}
+SPACES_HARDWARE_TYPES = [x.value for x in SpaceHardware]
 
-_task_run_script_template = """import os
+
+_status_checker_content = """import os
+import subprocess
+import time
 from pathlib import Path
 from threading import Thread
+from typing import List, Union
+
 import gradio as gr
-from huggingface_hub import upload_folder, HfFolder, delete_repo
-import subprocess
-import sys
+from huggingface_hub import HfFolder, delete_repo, upload_folder, get_space_runtime, request_space_hardware, upload_file, hf_hub_download
 
-from {script} import main
 
-HfFolder().save_token(os.getenv("HF_TOKEN"))
-output_dataset_id = "{output_dataset_id}"
+def process_is_complete(process_pid):
+    '''Checks if the process with the given PID is still running'''
+    p = subprocess.Popen(["ps", "-p", process_pid], stdout=subprocess.PIPE)
+    out = p.communicate()[0].decode("utf-8").strip().split("\\n")
+    return len(out) == 1
 
-this_space_repo_id = "{space_id}"
-delete_space_on_completion = {delete_space_on_completion}
+def get_task_status(output_dataset_id):
+    '''Downloads a file .meta/task_status.txt from the output dataset repo and returns its contents'''
+    file_path = hf_hub_download(output_dataset_id, ".meta/task_status.txt", repo_type="dataset")
+    task_status = Path(file_path).read_text().strip()
+    return task_status
 
-output_dir = "{output_dir}"
-Path(output_dir).mkdir(exist_ok=True, parents=True)
-
-script_args = {script_args}
-script_args_lst = {script_args_lst}
-unpack_script_args_to_main = {unpack_script_args_to_main}
-
-def main_wrapper():
-    print('-' * 80)
-    print("Starting...")
-    print('-' * 80)
-
-    # Do the work
-    # main()
-    # main(**script_args)
-    if not unpack_script_args_to_main:
-        sys.argv = ["{script}"] + script_args_lst
-        main()
-    else:
-        main(**script_args)
-
-    print('-' * 80)
-    print("Done Running!")
-    print('-' * 80)
-
-    # Save the work
-    print("Uploading outputs to dataset repo")
-    upload_folder(
+def set_task_status(output_dataset_id, status="done"):
+    '''Uploads a file .meta/task_status.txt to the output dataset repo with the given status'''
+    upload_file(
         repo_id=output_dataset_id,
-        folder_path=output_dir,
-        path_in_repo='./outputs',
-        repo_type='dataset',
+        path_or_fileobj=status.encode(),
+        path_in_repo=".meta/task_status.txt",
+        repo_type="dataset",
     )
 
-    # Delete self.
-    if delete_space_on_completion:
-        delete_repo(this_space_repo_id, repo_type="space")
+def check_for_status(
+    process_pid, this_space_id, output_dataset_id, output_dirs, delete_on_completion, downgrade_hardware_on_completion
+):
+    task_status = get_task_status(output_dataset_id)
+    print("Task status (found in dataset repo)", task_status)
+    if task_status == "done":
+        print("Task was already done, exiting...")
+        return
+    elif task_status == "preparing":
+        print("Setting task status to running...")
+        set_task_status(output_dataset_id, "running")
 
-with gr.Blocks() as demo:
-    gr.Markdown(Path('about.md').read_text())
+    print("Watching PID of script to see if it is done running")
+    while True:
+        if process_is_complete(process_pid):
+            print("Process is complete! Uploading assets to output dataset repo")
+            for output_dir in output_dirs:
+                if Path(output_dir).exists():
+                    print("Uploading folder", output_dir)
+                    upload_folder(
+                        repo_id=output_dataset_id,
+                        folder_path=str(output_dir),
+                        path_in_repo=str(Path('.outputs') / output_dir),
+                        repo_type="dataset",
+                    )
+                else:
+                    print("Folder", output_dir, "does not exist, skipping")
 
-thread = Thread(target=main_wrapper, daemon=True)
-thread.start()
-demo.launch()
+            print("Finished uploading outputs to dataset repo...Finishing up...")
+            if delete_on_completion:
+                print("Deleting space...")
+                delete_repo(repo_id=this_space_id, repo_type="space")
+            elif downgrade_hardware_on_completion:
+                runtime = get_space_runtime(this_space_id)
+                if runtime.hardware != "cpu-basic":
+                    print("Requesting downgrade to CPU Basic...")
+                    request_space_hardware(repo_id=this_space_id, hardware="cpu-basic")
+                else:
+                    print("Space is already on cpu-basic, not downgrading.")
+                print("Downgrading hardware...")
+            print("Done! Setting task status to done in dataset repo")
+            set_task_status(output_dataset_id, "done")
+            return
+        print("Didn't find it...sleeping for 5 seconds.")
+        time.sleep(5)
+
+
+def main(
+    this_space_repo_id: str,
+    output_dataset_id: str,
+    output_dirs: Union[str, List[str]] = "./outputs",
+    delete_on_completion: bool = True,
+    downgrade_hardware_on_completion: bool = True,
+):
+    token_env_var = os.getenv("HF_TOKEN")
+    if token_env_var is None:
+        raise ValueError(
+            "Please set HF_TOKEN environment variable to your Hugging Face token. You can do this in the settings tab of your space."
+        )
+
+    if isinstance(output_dirs, str):
+        output_dirs = [output_dirs]
+
+    HfFolder().save_token(token_env_var)
+
+    # Watch python script's process to see when it's done running
+    process_pid = os.getenv("USER_SCRIPT_PID", None)
+
+    with gr.Blocks() as demo:
+        gr.Markdown(Path("about.md").read_text())
+
+    thread = Thread(
+        target=check_for_status,
+        daemon=True,
+        args=(
+            process_pid,
+            this_space_repo_id,
+            output_dataset_id,
+            output_dirs,
+            delete_on_completion,
+            downgrade_hardware_on_completion,
+        ),
+    )
+    thread.start()
+    demo.launch()
+
+
+if __name__ == "__main__":
+    import fire
+
+    fire.Fire(main)
 """
 
-_about_md_content = """
+# TODO - align with the GPU Dockerfile a bit more
+_dockerfile_cpu_content = """FROM python:3.9
+
+WORKDIR /code
+
+COPY ./requirements.txt /code/requirements.txt
+
+RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+RUN pip install --no-cache-dir fire gradio datasets huggingface_hub
+
+# Set up a new user named "user" with user ID 1000
+RUN useradd -m -u 1000 user
+
+# Switch to the "user" user
+USER user
+
+# Set home to the user's home directory
+ENV HOME=/home/user \
+	PATH=/home/user/.local/bin:$PATH \
+    PYTHONPATH=$HOME/app \
+	PYTHONUNBUFFERED=1 \
+	GRADIO_ALLOW_FLAGGING=never \
+	GRADIO_NUM_PORTS=1 \
+	GRADIO_SERVER_NAME=0.0.0.0 \
+	GRADIO_THEME=huggingface \
+	SYSTEM=spaces
+
+# Set the working directory to the user's home directory
+WORKDIR $HOME/app
+
+# Copy the current directory contents into the container at $HOME/app setting the owner to the user
+COPY --chown=user . $HOME/app
+
+RUN chmod +x start_server.sh
+
+CMD ["./start_server.sh"]
+"""
+
+_dockerfile_gpu_content = """FROM nvidia/cuda:11.3.1-base-ubuntu20.04
+
+# Remove any third-party apt sources to avoid issues with expiring keys.
+RUN rm -f /etc/apt/sources.list.d/*.list
+
+# Install some basic utilities
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    sudo \
+    git \
+    bzip2 \
+    libx11-6 \
+ && rm -rf /var/lib/apt/lists/*
+
+# Create a working directory
+RUN mkdir /app
+WORKDIR /app
+
+# Create a non-root user and switch to it
+RUN adduser --disabled-password --gecos '' --shell /bin/bash user \
+ && chown -R user:user /app
+RUN echo "user ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-user
+USER user
+
+# All users can use /home/user as their home directory
+ENV HOME=/home/user
+RUN mkdir $HOME/.cache $HOME/.config \
+ && chmod -R 777 $HOME
+
+# Set up the Conda environment
+ENV CONDA_AUTO_UPDATE_CONDA=false \
+    PATH=$HOME/miniconda/bin:$PATH
+RUN curl -sLo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-py39_4.10.3-Linux-x86_64.sh \
+ && chmod +x ~/miniconda.sh \
+ && ~/miniconda.sh -b -p ~/miniconda \
+ && rm ~/miniconda.sh \
+ && conda clean -ya
+
+
+ENV PYTHONUNBUFFERED=1 \
+	GRADIO_ALLOW_FLAGGING=never \
+	GRADIO_NUM_PORTS=1 \
+	GRADIO_SERVER_NAME=0.0.0.0 \
+	GRADIO_THEME=huggingface \
+	SYSTEM=spaces
+
+RUN pip install --no-cache-dir fire gradio datasets huggingface_hub
+
+# Install user requirements
+COPY ./requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
+
+WORKDIR $HOME/app
+
+# Copy the current directory contents into the container at $HOME/app setting the owner to the user
+COPY --chown=user . $HOME/app
+
+RUN chmod +x start_server.sh
+
+CMD ["./start_server.sh"]
+"""
+
+_start_server_template = """#!/bin/bash
+
+# Start the python script in the background asynchronously
+nohup {command} &
+
+# Save the PID of the python script so we can reference it in the status checker
+export USER_SCRIPT_PID=$!
+
+# Start a simple web server to watch the status of the python script
+python status_checker.py {status_checker_args}
+"""
+
+_about_md_template = """
 # Task Runner
 
 This space is running some job!
@@ -96,19 +264,30 @@ This space is running some job!
 """
 
 
+def _convert_dict_to_args_str(args_dict: dict) -> str:
+    """Convert a dictionary of arguments to a string of arguments that can be passed to a command line script"""
+    args_str = ""
+    for arg_name, arg_value in args_dict.items():
+        if isinstance(arg_value, (str, list, dict, tuple)):
+            args_str += f' --{arg_name} "{repr(arg_value)}"'
+        else:
+            args_str += f" --{arg_name} {arg_value}"
+    return args_str.strip()
+
+
 def run(
     script: str,
     requirements_file: Optional[str] = None,
     space_id: str = None,
-    space_hardware: str = "cpu",
+    space_hardware: str = "cpu-basic",
     dataset_id: Optional[str] = None,
     private: bool = False,
     allow_patterns: Optional[List[str]] = None,
     ignore_patterns: Optional[List[str]] = None,
     save_code_snapshot_in_dataset_repo: bool = False,
     delete_space_on_completion: bool = True,
-    unpack_script_args_to_main: bool = False,
-    space_output_dir: str = "outputs",
+    downgrade_hardware_on_completion: bool = True,
+    space_output_dirs: Optional[List[str]] = None,
     token: Optional[str] = None,
     extra_run_metadata: Optional[dict] = None,
     **kwargs,
@@ -136,11 +315,12 @@ def run(
             If True, a code snapshot will be saved in the Hugging Face Dataset Repo. Defaults to False.
         delete_space_on_completion (`bool`, optional):
             If True, the Hugging Face Space will be deleted after the job completes. Defaults to True.
-        unpack_script_args_to_main (`bool`, optional):
-            If True, kwargs will be unpacked to the main function. Otherwise, they will be used to override
-            `sys.argv`, which assumes your `main` function handles argument parsing. Defaults to False.
-        space_output_dir (`str`, optional):
-            Dir in the space that will be uploaded to output dataset on run completion. Defaults to "outputs".
+        downgrade_hardware_on_completion (`bool`, optional):
+            If True, and `delete_space_on_completion` is False, the Hugging Face Space hardware will be
+            downgraded to "cpu-basic" after the job completes. Defaults to True.
+        space_output_dirs (`str`, optional):
+            Dirs in the space that will be uploaded to output dataset on run completion. If unspecified,
+            will default to ["outputs", "logs"].
         token (`str`, optional):
             Hugging Face token. Uses your cached token (if available) by default. Defaults to None.
         extra_run_metadata (`dict`, optional):
@@ -154,16 +334,15 @@ def run(
     Returns:
         Tuple[str, str]: Tuple of the Hugging Face Space URL and Hugging Face Dataset Repo URL.
     """
-    space_hardware = HUGGINGFACE_COMPUTE_TARGETS_MAP[space_hardware]
-    if space_hardware is None:
-        raise ValueError(
-            f"Invalid instance type: {space_hardware}. Should be one of {list(HUGGINGFACE_COMPUTE_TARGETS_MAP.keys())}"
-        )
+    if space_hardware not in SPACES_HARDWARE_TYPES:
+        raise ValueError(f"Invalid instance type: {space_hardware}. Should be one of {SPACES_HARDWARE_TYPES}")
 
-    script_args = kwargs or {}
-    script_args_lst = list(chain(*((f"--{n}", f"{v}") for n, v in script_args.items())))
-    logger.info("Script args: ", script_args)
-    logger.info("Script args str list:", script_args_lst)
+    if space_output_dirs is None:
+        space_output_dirs = ["outputs", "logs"]
+
+    # The command to run in the space
+    # Ex. python train.py --learning_rate 0.1
+    command = f"python {script} {_convert_dict_to_args_str(kwargs)}"
 
     task_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     space_id = space_id or f"task-runner-{task_id}"
@@ -174,7 +353,7 @@ def run(
         space_id,
         exist_ok=True,
         repo_type="space",
-        space_sdk="gradio",
+        space_sdk="docker",
         space_hardware=space_hardware,
         private=private,
         token=token,
@@ -199,6 +378,12 @@ def run(
     ignore_patterns += [".git*", "README.md"]
 
     source_dir = Path(script).parent
+
+    if requirements_file is None:
+        requirements_file = source_dir / "requirements.txt"
+        requirements_file.touch()
+        requirements_file = str(requirements_file)
+
     # We push the source up to the Space
     upload_folder(
         repo_id=space_id,
@@ -215,7 +400,7 @@ def run(
         upload_folder(
             repo_id=dataset_id,
             folder_path=str(source_dir),
-            path_in_repo="./code_snapshot",
+            path_in_repo=".snapshot",
             repo_type="dataset",
             allow_patterns=allow_patterns,
             ignore_patterns=ignore_patterns,
@@ -235,53 +420,68 @@ def run(
     upload_file(
         repo_id=dataset_id,
         path_or_fileobj=json.dumps(run_metadata, indent=2, sort_keys=False).encode(),
-        path_in_repo="run_metadata.json",
+        path_in_repo=".meta/run_metadata.json",
         repo_type="dataset",
         token=token,
     )
     logger.info("Uploaded run metadata to dataset repo for tracking!")
+    upload_file(
+        repo_id=dataset_id,
+        path_or_fileobj="preparing".encode(),
+        path_in_repo=".meta/task_status.txt",
+        repo_type="dataset",
+    )
 
-    # Next, we need to tell the Space to use the wrapper app instead of the default app.py
-    # Additionally, we add the "fuego" tag to the Space so it can be searched for later
-    card = RepoCard.load(space_id, repo_type="space")
-    changes_made_to_card = False
-    if card.data.app_file != "task_run_wrapper.py":
-        card.data.app_file = "task_run_wrapper.py"
-        changes_made_to_card = True
-    elif "fuego" not in card.data.tags:
-        card.data.tags.append("fuego")
-        changes_made_to_card = True
-    if changes_made_to_card:
-        card.push_to_hub(space_id, repo_type="space", token=token)
-
-    # After that, we upload an "about.md" file to display something while the runner is up
-    about_md_content = _about_md_content.format(output_repo_url=dataset_repo_url)
+    # about.md
     upload_file(
         repo_id=space_id,
-        path_or_fileobj=about_md_content.encode(),
+        path_or_fileobj=_about_md_template.format(output_repo_url=dataset_repo_url).encode(),
         path_in_repo="about.md",
         repo_type="space",
         token=token,
     )
 
-    # Finally, update the wrapper file with the given information and push it to the Hub.
-    task_wrapper_content = _task_run_script_template.format(
-        script=Path(script).stem,
-        script_args=script_args,
-        output_dataset_id=dataset_id,
-        output_dir=space_output_dir,
-        space_id=space_id,
-        delete_space_on_completion=delete_space_on_completion,
-        script_args_lst=script_args_lst,
-        unpack_script_args_to_main=unpack_script_args_to_main,
-    )
+    # start_server.sh
     upload_file(
         repo_id=space_id,
-        path_or_fileobj=task_wrapper_content.encode(),
-        path_in_repo="task_run_wrapper.py",
+        path_or_fileobj=_start_server_template.format(
+            command=command,
+            status_checker_args=_convert_dict_to_args_str(
+                dict(
+                    this_space_repo_id=space_id,
+                    output_dataset_id=dataset_id,
+                    output_dirs=space_output_dirs,
+                    delete_on_completion=delete_space_on_completion,
+                    downgrade_hardware_on_completion=downgrade_hardware_on_completion,
+                )
+            ),
+        ).encode(),
+        path_in_repo="start_server.sh",
         repo_type="space",
         token=token,
     )
+
+    # status_checker.py
+    upload_file(
+        repo_id=space_id,
+        path_or_fileobj=_status_checker_content.encode(),
+        path_in_repo="status_checker.py",
+        repo_type="space",
+        token=token,
+    )
+
+    # Dockerfile
+    dockerfile_content = (
+        _dockerfile_cpu_content if space_hardware in ["cpu-basic", "cpu-upgrade"] else _dockerfile_gpu_content
+    )
+    upload_file(
+        repo_id=space_id,
+        path_or_fileobj=dockerfile_content.encode(),
+        path_in_repo="Dockerfile",
+        repo_type="space",
+        token=token,
+    )
+
     return space_repo_url, dataset_repo_url
 
 
@@ -298,8 +498,8 @@ def github_run(
     ignore_patterns: Optional[List[str]] = None,
     save_code_snapshot_in_dataset_repo: bool = False,
     delete_space_on_completion: bool = True,
-    unpack_script_args_to_main: bool = False,
-    space_output_dir: str = "outputs",
+    downgrade_hardware_on_completion: bool = True,
+    space_output_dirs: Optional[List[str]] = None,
     token: Optional[str] = None,
     extra_run_metadata: Optional[dict] = None,
     **kwargs,
@@ -333,8 +533,8 @@ def github_run(
             ignore_patterns=ignore_patterns,
             save_code_snapshot_in_dataset_repo=save_code_snapshot_in_dataset_repo,
             delete_space_on_completion=delete_space_on_completion,
-            unpack_script_args_to_main=unpack_script_args_to_main,
-            space_output_dir=space_output_dir,
+            downgrade_hardware_on_completion=downgrade_hardware_on_completion,
+            space_output_dirs=space_output_dirs,
             token=token,
             extra_run_metadata=dict(
                 github_repo_id=github_repo_id,
