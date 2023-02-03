@@ -420,7 +420,7 @@ def run(
         token=token,
     )
 
-    requirements_file_content = resolve_requirements_txt(str(source_dir / "requirements.txt"), extra_requirements)
+    requirements_file_content = resolve_requirements_txt(requirements_file, extra_requirements)
     upload_file(
         repo_id=space_id,
         path_or_fileobj=requirements_file_content.encode(),
