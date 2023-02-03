@@ -1,7 +1,6 @@
 import fuego
 
 
-# since this example takes arguments to main, we specify to unpack them
 space_url, dataset_url = fuego.run(
     script="run.py",
     requirements_file="requirements.txt",
