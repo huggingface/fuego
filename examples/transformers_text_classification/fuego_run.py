@@ -19,5 +19,5 @@ space_url, dataset_url = fuego.run(
     output_dir="./outputs",
     logging_dir="./logs",
     logging_steps=20,
-    report_to="tensorboard"
+    report_to="tensorboard",
 )
