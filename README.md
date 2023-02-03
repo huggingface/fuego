@@ -26,6 +26,8 @@ pip install -e "."
 
 The Python API and CLI should have very similar experiences so folks can use whichever they prefer.
 
+See the examples folder for more details.
+
 #### Python
 
 
