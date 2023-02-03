@@ -134,3 +134,9 @@ config.json
 examples/config.json
 
 run.py
+
+# Ruff cache
+.ruff-cache/
+
+# Hatch files
+.hatch/
