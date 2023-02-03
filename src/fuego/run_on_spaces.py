@@ -7,7 +7,15 @@ from typing import List, Optional, Union
 
 import fire
 import git
-from huggingface_hub import HfFolder, SpaceHardware, add_space_secret, create_repo, upload_file, upload_folder
+from huggingface_hub import (
+    DatasetCard,
+    HfFolder,
+    SpaceHardware,
+    add_space_secret,
+    create_repo,
+    upload_file,
+    upload_folder,
+)
 from huggingface_hub.utils import logging
 
 
@@ -25,7 +33,7 @@ from threading import Thread
 from typing import List, Union
 
 import gradio as gr
-from huggingface_hub import HfFolder, delete_repo, upload_folder, get_space_runtime, request_space_hardware, upload_file, hf_hub_download
+from huggingface_hub import HfFolder, delete_repo, upload_folder, get_space_runtime, request_space_hardware, DatasetCard
 
 
 def process_is_complete(process_pid):
@@ -35,19 +43,15 @@ def process_is_complete(process_pid):
     return len(out) == 1
 
 def get_task_status(output_dataset_id):
-    '''Downloads a file .meta/task_status.txt from the output dataset repo and returns its contents'''
-    file_path = hf_hub_download(output_dataset_id, ".meta/task_status.txt", repo_type="dataset")
-    task_status = Path(file_path).read_text().strip()
-    return task_status
+    '''Gets the task status from the output dataset repo'''
+    card = DatasetCard.load(output_dataset_id)
+    return card.data.fuego['status']
 
 def set_task_status(output_dataset_id, status="done"):
-    '''Uploads a file .meta/task_status.txt to the output dataset repo with the given status'''
-    upload_file(
-        repo_id=output_dataset_id,
-        path_or_fileobj=status.encode(),
-        path_in_repo=".meta/task_status.txt",
-        repo_type="dataset",
-    )
+    '''Sets the task status in the output dataset repo'''
+    card = DatasetCard.load(output_dataset_id)
+    card.data.fuego['status'] = status
+    card.push_to_hub(output_dataset_id)
 
 def check_for_status(
     process_pid, this_space_id, output_dataset_id, output_dirs, delete_on_completion, downgrade_hardware_on_completion
@@ -58,10 +62,6 @@ def check_for_status(
         print("Task was already done, exiting...")
         return
     elif task_status == "preparing":
-        runtime = get_space_runtime(this_space_id)
-        if runtime.hardware != runtime.requested_hardware:
-            print("Space still waiting for hardware. Exiting for now...")
-            return
         print("Setting task status to running...")
         set_task_status(output_dataset_id, "running")
 
@@ -87,12 +87,11 @@ def check_for_status(
                 delete_repo(repo_id=this_space_id, repo_type="space")
             elif downgrade_hardware_on_completion:
                 runtime = get_space_runtime(this_space_id)
-                if runtime.hardware != "cpu-basic":
+                if runtime.hardware not in [None, "cpu-basic"]:
                     print("Requesting downgrade to CPU Basic...")
                     request_space_hardware(repo_id=this_space_id, hardware="cpu-basic")
                 else:
                     print("Space is already on cpu-basic, not downgrading.")
-                print("Downgrading hardware...")
             print("Done! Setting task status to done in dataset repo")
             set_task_status(output_dataset_id, "done")
             return
@@ -413,28 +412,18 @@ def run(
 
     # We put together some metadata here about the task and push that to the dataset
     # for safekeeping.
-    run_metadata = dict(
+    logger.info("Uploaded run metadata to dataset repo for tracking!")
+    card = DatasetCard("")
+    card.data.tags = ["fuego"]
+    card.data.fuego = dict(
+        status="preparing",
         script=script,
         requirements_file=requirements_file,
         space_id=space_id,
         space_hardware=space_hardware,
         **extra_run_metadata or {},
     )
-
-    upload_file(
-        repo_id=dataset_id,
-        path_or_fileobj=json.dumps(run_metadata, indent=2, sort_keys=False).encode(),
-        path_in_repo=".meta/run_metadata.json",
-        repo_type="dataset",
-        token=token,
-    )
-    logger.info("Uploaded run metadata to dataset repo for tracking!")
-    upload_file(
-        repo_id=dataset_id,
-        path_or_fileobj="preparing".encode(),
-        path_in_repo=".meta/task_status.txt",
-        repo_type="dataset",
-    )
+    card.push_to_hub(dataset_id, token=token)
 
     # about.md
     upload_file(
