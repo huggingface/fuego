@@ -342,7 +342,7 @@ def run(
 
     # The command to run in the space
     # Ex. python train.py --learning_rate 0.1
-    command = f"python {script} {_convert_dict_to_args_str(kwargs)}"
+    command = f"python {script.name} {_convert_dict_to_args_str(kwargs)}"
 
     task_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     space_id = space_id or f"task-runner-{task_id}"
