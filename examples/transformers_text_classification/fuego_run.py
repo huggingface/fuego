@@ -1,8 +1,6 @@
 import fuego
 
 
-# Since we use the default unpack_script_args_to_main=False, the kwargs are used
-# to override sys.argv, which assumes the `main` function in `run_glue.py` handles argparsing.
 space_url, dataset_url = fuego.run(
     script="run_glue.py",
     requirements_file="requirements.txt",
