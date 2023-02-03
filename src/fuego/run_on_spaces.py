@@ -491,7 +491,7 @@ def github_run(
     requirements_file: Optional[str] = None,
     github_repo_branch: str = "main",
     space_id: str = None,
-    space_hardware: str = "cpu",
+    space_hardware: str = "cpu-basic",
     dataset_id: Optional[str] = None,
     private: bool = False,
     allow_patterns: Optional[List[str]] = None,
