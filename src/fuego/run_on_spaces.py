@@ -397,7 +397,7 @@ def run(
     logger.info(f"Created Dataset at: {dataset_repo_url}")
 
     # Add current HF token to the new space, so it has ability to push to output dataset
-    add_space_secret(space_id, "HF_TOKEN", HfFolder().get_token(), token=token)
+    add_space_secret(space_id, "HF_TOKEN", token or HfFolder().get_token(), token=token)
 
     # We want to ignore at the very least README.md and .git folder of the cloned
     # GitHub repo, but you can include more filters if you want.
