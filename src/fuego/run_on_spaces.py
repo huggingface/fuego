@@ -92,7 +92,7 @@ def check_for_status(
             print("Done! Setting task status to done in dataset repo")
             set_task_status(output_dataset_id, "done")
             return
-        print("Didn't find it...sleeping for 5 seconds.")
+        print("Process still running...sleeping for 5 seconds.")
         time.sleep(5)
 
 
