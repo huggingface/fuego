@@ -1,9 +1,7 @@
-import json
 import tempfile
 from datetime import datetime
-from itertools import chain
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import fire
 import git
