@@ -1,6 +1,11 @@
 import fuego
 
 
-# message here is a kwarg to fuego.run, which is passed to run.py
-# since this example takes arguments to main, we specify to unpack them
-fuego.run("run.py", unpack_script_args_to_main=True, message="Howdy, world!")
+space_url, dataset_url = fuego.run(
+    "run.py",
+    delete_space_on_completion=True,  # When debugging, set this to False
+    # Kwargs
+    message="Howdy, world!!!",
+)
+print(f"space_url: {space_url}")
+print(f"dataset_url: {dataset_url}")
