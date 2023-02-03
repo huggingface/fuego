@@ -2,6 +2,8 @@
 
 A 🔥 tool for running code in the cloud
 
+🔥[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/huggingface/fuego/blob/main/examples/fuego_demo.ipynb)🔥
+
 ### Note
 
 ❗ **This project is a WIP and just an _idea_ right now. Under active development.** ❗
