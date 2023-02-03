@@ -21,3 +21,5 @@ space_url, dataset_url = fuego.run(
     logging_steps=20,
     report_to="tensorboard",
 )
+print(f"Space: {space_url}")
+print(f"Dataset: {dataset_url}")
