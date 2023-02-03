@@ -58,6 +58,10 @@ def check_for_status(
         print("Task was already done, exiting...")
         return
     elif task_status == "preparing":
+        runtime = get_space_runtime(this_space_id)
+        if runtime.hardware != runtime.requested_hardware:
+            print("Space still waiting for hardware. Exiting for now...")
+            return
         print("Setting task status to running...")
         set_task_status(output_dataset_id, "running")
 
