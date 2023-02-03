@@ -7,3 +7,4 @@ protobuf
 torch >= 1.3
 evaluate
 transformers == 4.26.0
+tensorboard
