@@ -1,4 +1,5 @@
 import tempfile
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -257,9 +258,9 @@ python status_checker.py {status_checker_args}
 """
 
 _about_md_template = """
-# Task Runner
+# Fuego Runner
 
-This space is running some job!
+This space is running some job thanks to [fuego](https://github.com/huggingface/fuego)! 🔥
 
 - Check out the associated [output repo]({output_repo_url})
 """
@@ -345,9 +346,9 @@ def run(
     # Ex. python train.py --learning_rate 0.1
     command = f"python {Path(script).name} {convert_dict_to_args_str(kwargs)}"
 
-    task_id = datetime.now().strftime("%Y%m%d-%H%M%S")
-    space_id = space_id or f"task-runner-{task_id}"
-    dataset_id = dataset_id or f"task-outputs-{task_id}"
+    task_id = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
+    space_id = space_id or f"fuego-{task_id}"
+    dataset_id = dataset_id or f"fuego-{task_id}"
 
     # Create 2 new repos. One space for running code, one dataset for storing artifacts
     space_repo_url = create_repo(
@@ -414,6 +415,7 @@ def run(
     card = DatasetCard("")
     card.data.tags = ["fuego"]
     card.data.fuego = dict(
+        id=task_id,
         status="preparing",
         script=script,
         requirements_file=requirements_file,
