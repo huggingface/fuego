@@ -94,7 +94,6 @@ def check_for_status(
             print("Done! Setting task status to done in dataset repo")
             set_task_status(output_dataset_id, "done")
             return
-        print("Process still running...sleeping for 5 seconds.")
         time.sleep(5)
 
 
@@ -277,6 +276,31 @@ def convert_dict_to_args_str(args_dict: dict) -> str:
     return args_str.strip()
 
 
+def resolve_requirements_txt(file_path: str = None, requirements: List[str] = None):
+    # If both the file path and the requirements list are provided
+    if file_path and requirements:
+        # Read the contents of the requirements file
+        file_contents = Path(file_path).read_text()
+
+        # Combine the contents of the file and the list of requirements
+        combined_contents = file_contents + "\n" + "\n".join(requirements)
+        return combined_contents
+
+    # If only the file path is provided
+    elif file_path:
+        # Read the contents of the requirements file
+        file_contents = Path(file_path).read_text()
+        return file_contents
+
+    # If only the list of requirements is provided
+    elif requirements:
+        return "\n".join(requirements)
+
+    # If neither the file path nor the list of requirements is provided
+    else:
+        return ""
+
+
 def run(
     script: str,
     requirements_file: Optional[str] = None,
@@ -292,6 +316,7 @@ def run(
     space_output_dirs: Optional[List[str]] = None,
     token: Optional[str] = None,
     extra_run_metadata: Optional[dict] = None,
+    extra_requirements: Optional[List[str]] = None,
     **kwargs,
 ):
     """Create a Hugging Face Space and run a script in it. When finished, the outputs will be saved to a Hugging Face Dataset Repo.
@@ -327,6 +352,9 @@ def run(
             Hugging Face token. Uses your cached token (if available) by default. Defaults to None.
         extra_run_metadata (`dict`, optional):
             Extra metadata to add to the run metadata json file that gets added to the output dataset. Defaults to None.
+        extra_requirements (`List[str]`, optional):
+            List of pip requirements to install in the Hugging Face Space. If requirements_file is also provided,
+            the requirements in the file will be installed in addition to the requirements in this list. Defaults to None.
         **kwargs:
             Keyword arguments are passed to the script as argparse args or unpacked to the main function.
 
@@ -381,11 +409,6 @@ def run(
 
     source_dir = Path(script).parent
 
-    if requirements_file is None:
-        requirements_file = source_dir / "requirements.txt"
-        requirements_file.touch()
-        requirements_file = str(requirements_file)
-
     # We push the source up to the Space
     upload_folder(
         repo_id=space_id,
@@ -394,6 +417,15 @@ def run(
         repo_type="space",
         allow_patterns=allow_patterns,
         ignore_patterns=ignore_patterns,
+        token=token,
+    )
+
+    requirements_file_content = resolve_requirements_txt(str(source_dir / "requirements.txt"), extra_requirements)
+    upload_file(
+        repo_id=space_id,
+        path_or_fileobj=requirements_file_content.encode(),
+        path_in_repo="requirements.txt",
+        repo_type="space",
         token=token,
     )
 
@@ -417,8 +449,8 @@ def run(
     card.data.fuego = dict(
         id=task_id,
         status="preparing",
-        script=script,
-        requirements_file=requirements_file,
+        script=Path(script).name,
+        requirements_file=Path(requirements_file).name if requirements_file else None,
         space_id=space_id,
         space_hardware=space_hardware,
         **extra_run_metadata or {},
@@ -495,6 +527,7 @@ def github_run(
     space_output_dirs: Optional[List[str]] = None,
     token: Optional[str] = None,
     extra_run_metadata: Optional[dict] = None,
+    extra_requirements: Optional[List[str]] = None,
     **kwargs,
 ):
     """Create a run from code within a GitHub repo. See `run` for more details."""
@@ -535,6 +568,7 @@ def github_run(
                 github_repo_sha=repo.head.object.hexsha,
                 **extra_run_metadata or {},
             ),
+            extra_requirements=extra_requirements,
             **kwargs,
         )
 
