@@ -20,7 +20,6 @@ def fuego_github_run_wrapper(
     downgrade_hardware_on_completion,
     extra_run_metadata,
 ):
-    valid_inputs = True
     if not token.strip():
         return "token with write access is required. Get one from https://hf.co/settings/tokens", "", ""
     if script_args.strip():
@@ -84,7 +83,22 @@ examples = [
         True,
         True,
         "",
-    ]
+    ],
+    [
+        "",
+        "huggingface/transformers",
+        "main",
+        "examples/pytorch/text-classification/run_glue.py",
+        "examples/pytorch/text-classification/requirements.txt",
+        "tensorboard\ngit+https://github.com/huggingface/transformers@main#egg=transformers",
+        "./outputs,./logs",
+        "model_name_or_path: bert-base-cased\ntask_name: mrpc\ndo_train: True\ndo_eval: True\nmax_seq_length: 128\nper_device_train_batch_size: 32\nlearning_rate: 2e-5\nnum_train_epochs: 3\noutput_dir: ./outputs\nlogging_dir: ./logs\nlogging_steps: 20\nreport_to: tensorboard",
+        "cpu-basic",
+        False,
+        True,
+        True,
+        "",
+    ],
 ]
 description = """
 This app lets you run scripts from GitHub on Spaces, using any hardware you'd like. Just point to a repo, the script you'd like to run, the dependencies to install, and any args to pass to your script, and watch it go. 😎
@@ -105,12 +119,16 @@ Runs using this tool are **free** as long as you use `cpu-basic` hardware. 🔥
   3. Runs your code on the space via the wrapper. Logs should show up in the space.
   4. When the script is done, it takes anything saved to the `output_dirs` and uploads the files within to the output dataset repo
   5. Deletes the space (or downgrades, or just leaves on). Depends on your choice of `delete_space_on_completion` and `downgrade_hardware_on_completion`.
+
+## Notes
+
+- If your space ends up having a "no application file" issue, you may need to "factory reset" the space. You can do this from the settings page of the space.
 """
 
 interface = gr.Interface(
     fuego_github_run_wrapper,
     inputs=[
-        gr.Textbox(lines=1, placeholder="Hugging Face token with write access"),
+        gr.Textbox(lines=1, placeholder="Hugging Face token with write access", type="password"),
         gr.Textbox(lines=1, placeholder="Source code GitHub repo ID (ex. huggingface/fuego)"),
         gr.Textbox(lines=1, placeholder="Branch of GitHub repo (ex. main)", value="main"),
         gr.Textbox(lines=1, placeholder="Path to python script in the GitHub repo"),
