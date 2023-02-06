@@ -15,5 +15,6 @@ jobs:
       huggingface_repo_id: nateraw/fuego
       repo_type: space
       space_sdk: gradio
+      subdirectory: examples/github_runner_app
     secrets:
       hf_token: ${{ secrets.HF_TOKEN }}
