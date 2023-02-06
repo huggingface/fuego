@@ -1,0 +1,3 @@
+gradio
+PyYAML
+git+https://github.com/huggingface/fuego@main#egg=fuego

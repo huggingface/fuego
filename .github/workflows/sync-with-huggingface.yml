@@ -1,0 +1,19 @@
+name: Sync with Hugging Face Hub
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - examples/github_runner_app/**
+
+jobs:
+   build:
+    uses: nateraw/huggingface-sync-action/.github/workflows/sync_with_hf_hub.yml@main
+    with:
+      github_repo_id: huggingface/fuego
+      huggingface_repo_id: nateraw/fuego
+      repo_type: space
+      space_sdk: gradio
+    secrets:
+      hf_token: ${{ secrets.HF_TOKEN }}
