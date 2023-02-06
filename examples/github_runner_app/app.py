@@ -90,8 +90,13 @@ description = """
 This app lets you run scripts from GitHub on Spaces, using any hardware you'd like. Just point to a repo, the script you'd like to run, the dependencies to install, and any args to pass to your script, and watch it go. 😎
 It uses 🔥[fuego](https://github.com/huggingface/fuego)🔥 under the hood to launch your script in one line of Python code. Give the repo a ⭐️ if you think its 🔥.
 **Note: You'll need a Hugging Face token with write access, which you can get from [here](https://hf.co/settings/tokens)**
+
 ## Pricing
+
+Runs using this tool are **free** as long as you use `cpu-basic` hardware. 🔥
+
 **See pricing for accelerated hardware (anything other than `cpu-basic`) [here](https://hf.co/pricing#spaces)**
+
 ## What this space does:
   1. Spins up 2 new HF repos for you: a "runner" space repo and an "output" dataset repo.
   2. Uploads your code to the space, as well as some wrapper code that invokes your script.
