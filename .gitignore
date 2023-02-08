@@ -134,3 +134,4 @@ config.json
 examples/config.json
 
 run.py
+examples/lora*
