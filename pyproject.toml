@@ -1,80 +1,15 @@
-[build-system]
-build-backend = "hatchling.build"
-requires = ["hatchling"]
-
-[project]
-authors = [{name = "Nathan Raw", email = "nate@huggingface.com"}]
-dependencies = [
-  "fire~=0.5.0",
-  "huggingface_hub~=0.12.0",
-  "GitPython~=3.1.30",
-]
-description = "A 🔥 interface for running code in the cloud"
-dynamic = ["version"]
-keywords = []
-license = "Apache-2.0"
-name = "fuego"
-readme = "README.md"
-requires-python = ">=3.7,<3.11"
-
-[project.urls]
-Issues = "https://github.com/huggingface/fuego/issues"
-Source = "https://github.com/huggingface/fuego"
-
-[tool.hatch.version]
-path = "src/fuego/__init__.py"
-
-[project.scripts]
-fuego = "fuego.run_on_spaces:cli_run"
-
-[project.optional-dependencies]
-format = [
-  "black~=22.10.0",
-  "ruff~=0.0.230",
-]
-
-[tool.hatch.envs.format]
-features = [
-  "format",
-]
-
-[tool.hatch.envs.format.scripts]
-check = [
-  "ruff .",
-  "black --check --diff --preview .",
-]
-style = [
-  "ruff --fix .",
-  "black --preview .",
-  "check",
-]
+[tool.black]
+line-length = 119
+target_version = ['py37']
 
 [tool.ruff]
-ignore = [
-  # "E203", # whitespace before ':' -> Not implemented yet, check https://github.com/charliermarsh/ruff/issues/2402
-  "E501", # line too long, handled by black
-  # "W503", # line break before binary operator -> Is obsolete by `black`, check https://github.com/charliermarsh/ruff/issues/1746
-]
-select = [
-  "E", # pycodestyle errors
-  "W", # pycodestyle warnings
-  "F", # pyflakes
-  "I", # isort
-  "C", # flake8-comprehensions
-  "B", # flake8-bugbear
-]
+# Ignored rules:
+#   "E501" -> line length violation
+#   "F821" -> undefined named in type annotation (e.g. Literal["something"])
+ignore = ["E501", "F821"]
+line-length = 119
+select = ["E", "F", "I", "W"]
 
 [tool.ruff.isort]
 known-first-party = ["fuego"]
-
-[tool.black]
-line-length = 119
-target_version = ["py37"]
-
-[tool.hatch.build.targets.sdist]
-exclude = [
-  "/.github",
-  "/docs",
-  "/.gitignore",
-  "/tests",
-]
+lines-after-imports = 2
