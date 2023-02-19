@@ -2,6 +2,7 @@ from pathlib import Path
 
 import fuego
 
+
 space_url, dataset_url = fuego.run(
     script=str(Path(__file__).parent / "run.py"),
     requirements_file=str(Path(__file__).parent / "requirements.txt"),
