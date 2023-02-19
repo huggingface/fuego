@@ -1,0 +1,3 @@
+gradio
+PyYAML
+fuego==0.0.8

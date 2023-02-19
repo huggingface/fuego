@@ -137,3 +137,5 @@ run.py
 
 # Ruff cache
 .ruff_cache/
+
+examples/lora*
