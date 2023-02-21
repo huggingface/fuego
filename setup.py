@@ -17,7 +17,8 @@ requirements = [
     "GitPython",
 ]
 
-quality_requirements = ["black~=23.1", "ruff>=0.0.241"]
+extras = {}
+extras["quality"] = ["black~=23.1", "ruff>=0.0.241"]
 
 setup(
     name="fuego",
@@ -30,7 +31,7 @@ setup(
     author_email="nate@huggingface.com",
     license="Apache",
     install_requires=requirements,
-    extras_require={"quality": quality_requirements},
+    extras_require=extras,
     package_dir={"": "src"},
     packages=find_packages("src"),
     entry_points={"console_scripts": ["fuego=fuego.run_on_spaces:cli_run"]},
