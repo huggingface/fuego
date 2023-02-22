@@ -7,5 +7,5 @@ quality:
 
 # Format source code automatically
 style:
-	black --preview .
+	black .
 	ruff --fix .
