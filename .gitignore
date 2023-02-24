@@ -134,4 +134,8 @@ config.json
 examples/config.json
 
 run.py
+
+# Ruff cache
+.ruff_cache/
+
 examples/lora*

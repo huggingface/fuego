@@ -472,13 +472,13 @@ def run(
         path_or_fileobj=_start_server_template.format(
             command=command,
             status_checker_args=convert_dict_to_args_str(
-                dict(
-                    this_space_repo_id=space_id,
-                    output_dataset_id=dataset_id,
-                    output_dirs=space_output_dirs,
-                    delete_on_completion=delete_space_on_completion,
-                    downgrade_hardware_on_completion=downgrade_hardware_on_completion,
-                )
+                {
+                    "this_space_repo_id": space_id,
+                    "output_dataset_id": dataset_id,
+                    "output_dirs": space_output_dirs,
+                    "delete_on_completion": delete_space_on_completion,
+                    "downgrade_hardware_on_completion": downgrade_hardware_on_completion,
+                }
             ),
         ).encode(),
         path_in_repo="start_server.sh",
