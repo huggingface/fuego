@@ -2,10 +2,10 @@
 
 # Check that source code meets quality standards
 quality:
-	black --check --diff --preview .
+	black --check --diff .
 	ruff .
 
 # Format source code automatically
 style:
 	black .
-	ruff --fix .
+	ruff . --fix
