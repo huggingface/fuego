@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Sync with Hugging Face
-      uses: nateraw/huggingface-sync-action@v0.0.4
+      uses: nateraw/huggingface-sync-action@c1518d9edf69c7e6beaa8f0c35df06d5952e2cf0  # v0.0.4
       with:
         github_repo_id: huggingface/fuego
         huggingface_repo_id: nateraw/fuego
