@@ -8,8 +8,12 @@ on:
     tags:
       - v*
 
+permissions: {}
+
 jobs:
   deploy:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
 
     steps:
