@@ -8,8 +8,12 @@ on:
       - .github/workflows/sync-with-huggingface.yml
       - examples/github_runner_app/**
 
+permissions: {}
+
 jobs:
   build:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
     - name: Sync with Hugging Face
